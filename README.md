@@ -142,12 +142,229 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
 
-3. Manager 
+3. Manager
+
+    ```cs
+        // Entities and their states / Model
+        private List<string> heap = new List<string>();
+        private string[] dir = new string[] { "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" };
+        
+        // Keep track of a player's or opponent's hand
+        private List<string> enemy = new List<string>();
+        private List<string> player = new List<string>();
+        
+        public GameObject cardPrefab;
+        public GameObject enemyGrid;
+        public GameObject playerGrid;
+        public GameObject winShow;
+        public GameObject loseShow;
+        public GameObject drawShow;
+        public GameObject startButton;
+        public GameObject exerciser;
+        
+        // Judge if it's a player round or if the player will draw cards
+        // -1 means that the player will no longer draw cards
+        // 1 is the current player's turn, 0 is the opponent's turn
+        private static int signal = 0;
+        
+        private bool gameRunning = false;
+    ```
 
     调用Shuffle()函数，洗牌，返回打乱后的牌堆列表； 
 
-    调用DrawCard()函数，创建抽牌的动画效果，并调用DrawToEnemy()或DrawToPlayer()函数；该函数并不修改Model的参数值； 
+    ```cs
+        // Components /controls
+        List<string> Shuffle(List<string> list)
+        {
+            System.Random random = new System.Random();
+            List<string> newList = new List<string>();
+            foreach(string item in list)
+            {
+                newList.Insert(random.Next(newList.Count + 1), item);
+            }
+            return newList;
+        }
+    ```
 
+    ```cs
+       // Calculate the maximum number of points that can be represented by all hands of a side
+       int Calculate(List<string> list)
+       {
+           int ans = 0, A_num = 0;
+           foreach(string item in list)
+           {
+               switch(item) 
+               { 
+                   case "A": A_num++; break;
+                   case "K": ans += 10; break;
+                   case "Q": ans += 10; break;
+                   case "J": ans += 10; break;
+                   default:ans += int.Parse(item); break;
+               }
+           }
+           if (A_num > 0)
+           {
+               ans += A_num;
+               if (ans + 10 <= 21)
+               {
+                   ans += 10;
+               }
+           }
+           return ans;
+       }
+    ```
+
+    调用DrawCard()函数，创建抽牌的动画效果，并调用DrawToEnemy()或DrawToPlayer()函数；该函数并不修改Model的参数值；
+   
     调用DrawToEnemy()与DrawToPlayer()函数，创建Card对象并将其在游戏中显示出来，同时修改Model的参数值； 
 
-    在游戏运行时，玩家按下“新的游戏”，“抽牌”或“停牌”按钮后，分别调用OnClickStart()，OnClickContinue()或OnClickEnd()函数； 
+    ```cs
+           void DrawToEnemy()
+        {
+            GameObject newCard = GameObject.Instantiate(cardPrefab, enemyGrid.transform);
+            enemy.Add(heap[0]);
+            newCard.GetComponent<CardDisplay>().SetValueText(heap[0]);
+            heap.RemoveAt(0);
+        }
+        
+        void DrawToPlayer()
+        {
+            GameObject newCard = GameObject.Instantiate(cardPrefab, playerGrid.transform);
+            player.Add(heap[0]);
+            newCard.GetComponent<CardDisplay>().SetValueText(heap[0]);
+            heap.RemoveAt(0);
+        }
+        
+        void DrawCard(bool flag)
+        {
+            if (!flag)
+            {
+                exerciser.GetComponent<Exercisers>().Init("up");
+                DrawToEnemy();
+            }
+            else
+            {
+                exerciser.GetComponent<Exercisers>().Init("down");
+                DrawToPlayer();
+            }
+        }
+    ```
+
+    在游戏运行时，玩家按下“新的游戏”，“抽牌”或“停牌”按钮后，分别调用OnClickStart()，OnClickContinue()或OnClickEnd()函数；
+
+    ```cs
+        // Button interactions
+        public void OnClickContinue()
+        {
+            if(gameRunning)
+            {
+                signal = 1;
+            }
+        }
+        public void OnClickEnd()
+        {
+            if (gameRunning)
+            {
+                signal = -1;
+            }
+        }
+        public void OnClickStart()
+        {
+            GameInit();
+            GameRunning();
+        }
+    ```
+
+    ```cs
+        void GameInit()
+        {
+            // Refresh model
+            signal = 0;
+            heap.Clear();
+            enemy.Clear();
+            player.Clear();
+            gameRunning = false;
+        
+            // Set the UI controls to invisible
+            winShow.SetActive(false);
+            loseShow.SetActive(false);
+            drawShow.SetActive(false);
+            startButton.SetActive(false);
+        
+            // Clear Grid
+            foreach (Transform child in enemyGrid.GetComponent<Transform>())
+            {
+                Destroy(child.gameObject);
+            }
+            foreach (Transform child in playerGrid.GetComponent<Transform>())
+            {
+                Destroy(child.gameObject);
+            }
+        
+            // Initialize the deck and shuffle
+            for (int i = 0; i < 13; i++)
+            {
+                for (int j = 0; j < 16; j++)
+                {
+                    heap.Add(dir[i]);
+                }
+            }
+            heap = Shuffle(heap);
+        
+            // Hide the opponent's hand
+            enemyGrid.transform.position = enemyGrid.transform.position + new Vector3(0, 200, 0);
+        
+            // Initial dealing
+            DrawCard(false); DrawCard(false); DrawCard(true); DrawCard(true);
+        }
+    ```
+    
+    ```cs
+        void GameRunning()
+        {
+            // Judge Black Jack 
+            int playerSum = Calculate(player);
+            int enemySum = Calculate(enemy);
+            if (playerSum == 21 || enemySum == 21)
+            {
+                if (playerSum == enemySum)
+                {
+                    GameEnd(0);
+                }
+                else
+                if (playerSum == 21)
+                {
+                    GameEnd(1);
+                }
+                else
+                if(enemySum == 21)
+                {
+                    GameEnd(-1);
+                }
+                return;
+            }
+        
+            gameRunning = true;
+        }
+    ```
+   
+    ```cs
+        void GameEnd(int flag)
+        {
+            gameRunning = false;
+        
+            // Set the correct end window to visible
+            switch (flag)
+            {
+                case 1:winShow.SetActive(true);break ;
+                case -1:loseShow.SetActive(true);break ;
+                case 0:drawShow.SetActive(true) ;break ;
+            }
+        
+            // Show the opponent's hand
+            enemyGrid.transform.position = enemyGrid.transform.position + new Vector3(0, -200, 0);
+        
+            // Prepare for the next game
+            startButton.SetActive(true);
+        } 
+    ```
