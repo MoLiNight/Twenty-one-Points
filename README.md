@@ -72,17 +72,75 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
 
 ## 三、游戏实现 
 
-1. CardDisplay 
+1. CardDisplay
+
+    ```cs
+        public class CardDisplay : MonoBehaviour
+        {
+            public Text valueText;
+        
+            public void SetValueText(string value)
+            {
+                valueText.text = value;
+            }
+        }
+    ```
 
 2. Exercisers 
 
-    变量direction用于记录运动方向，变量time用于记录当前已运动的时间，变量running用于记录当前是否应该运动； 
-  
-    调用Init()函数，重置上述变量值，并创建运动对象； 
-  
+    变量direction用于记录运动方向，变量time用于记录当前已运动的时间，变量running用于记录当前是否应该运动；
+
+    ```cs
+        private string direction;
+        private float time;
+        private bool running = false;
+        
+        private GameObject newCard;
+        public GameObject cardArea;
+        public GameObject cardPrefab;
+    ```
+
+    调用Init()函数，重置上述变量值，并创建运动对象；
+
+    ```cs
+        public void Init(string dir)
+        {
+            newCard = GameObject.Instantiate(cardPrefab, cardArea.transform);
+            time = 0;
+            direction = dir;
+            running = true;
+        }
+    ```
+
     Exercisers 类仅用于创建抽牌的动画效果，故newCard对象在运动完毕后销毁； 
   
     在本游戏中仅存在玩家抽牌，对手抽牌两种动画效果，故无需添加与传递运动时间，运动速度等参数； 
+
+    ```cs
+        void Update()
+        {
+            if (running)
+            {
+                if (time < 0.25)
+                {
+                    if (direction == "up")
+                    {
+                        newCard.transform.position += 2400 * Vector3.up * Time.deltaTime;
+                    }
+                    if (direction == "down")
+                    {
+                        newCard.transform.position -= 1600 * Vector3.up * Time.deltaTime;
+                    }
+                    time += Time.deltaTime;
+                }
+                else
+                {
+                    running = false;
+                    Destroy(newCard);
+                }
+            }
+        }
+    ```
 
 3. Manager 
 
