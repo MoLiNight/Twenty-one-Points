@@ -144,6 +144,10 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
 
 3. Manager
 
+    利用变量signal在Manager脚本内实现类似互斥锁的机制；
+
+    变量signal的值存在特定代码块执行完毕后自动修改，玩家与游戏进行交互调用函数修改两种修改方式；
+
     ```cs
         // Entities and their states / Model
         private List<string> heap = new List<string>();
@@ -166,7 +170,7 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         // -1 means that the player will no longer draw cards
         // 1 is the current player's turn, 0 is the opponent's turn
         private static int signal = 0;
-        
+
         private bool gameRunning = false;
     ```
 
@@ -185,6 +189,8 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
             return newList;
         }
     ```
+
+    调用Calculate()函数，计算并返回当前玩家或对手的所有手牌所能表示的最大的点数之和
 
     ```cs
        // Calculate the maximum number of points that can be represented by all hands of a side
@@ -275,6 +281,8 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
 
+    调用GameInit()函数，
+
     ```cs
         void GameInit()
         {
@@ -319,6 +327,8 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
     
+    调用GameRunning()函数，
+
     ```cs
         void GameRunning()
         {
@@ -347,7 +357,9 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
             gameRunning = true;
         }
     ```
-   
+    
+    调用GameEnd()函数，
+
     ```cs
         void GameEnd(int flag)
         {
