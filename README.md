@@ -281,7 +281,9 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
 
-    调用GameInit()函数，
+    新的游戏开始时，调用GameInit()函数，重置Model的参数值并恢复游戏UI；
+
+    上述操作完毕后，向上移动enemyGrid以隐藏对手的手牌，并为玩家与对手二人各抽取两张牌；
 
     ```cs
         void GameInit()
@@ -327,7 +329,11 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
     
-    调用GameRunning()函数，
+    调用GameInit()函数后，调用GameRunning()函数；
+
+    若玩家或对手的手牌满足黑杰克，则游戏胜负已定，无需继续进行；
+
+    若不满足，则设置gameRunning的值为true，游戏继续进行，后续回合在Update()函数内实现；
 
     ```cs
         void GameRunning()
@@ -358,7 +364,9 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
         }
     ```
     
-    调用GameEnd()函数，
+    胜负确定后，调用GameEnd()函数，终止游戏回合进行，并根据胜负情况显示对应的提示信息；
+
+    上述操作完毕后，向下移动enemyGrid以显示对手的手牌，并重新设置“新的开始”按钮为可见；
 
     ```cs
         void GameEnd(int flag)
@@ -379,4 +387,67 @@ Video URL：https://www.bilibili.com/video/BV1gP2SY7E5n/
             // Prepare for the next game
             startButton.SetActive(true);
         } 
+    ```
+
+    若gameRunning的值为true，则进入游戏回合的判断处理；
+
+    玩家与对手每次抽牌后，都将进行是否爆牌的判断；若一方爆牌，则另一方立即获得游戏胜利；
+    
+    ```cs
+        void Update()
+        {
+            if (gameRunning)
+            {
+                if (signal == 1)
+                {
+                    signal = 0;
+                    DrawCard(true);
+                    int sum = Calculate(player);
+                    // Judge if the player bust
+                    if (sum > 21)
+                    {
+                        GameEnd(-1);
+                    }
+                }
+                else
+                if (signal == 0 || signal == -1) 
+                {
+                    int sum = Calculate(enemy);
+                    // Judge if the opponent should draw card
+                    if (sum < 15)
+                    {
+                        DrawCard(false);
+                        sum = Calculate(enemy);
+                    }
+                    // Judge if the opponent bust
+                    if (sum > 21)
+                    {
+                        GameEnd(1);
+                    }
+                    if (sum >= 15 && sum <= 21 && signal == -1)
+                    {
+                        int score = Calculate(player);
+                        if (score == sum)
+                        {
+                            GameEnd(0);
+                        }
+                        else
+                        if (score > sum)
+                        {
+                            GameEnd(1);
+                        }
+                        else
+                        if (score < sum)
+                        {
+                            GameEnd(-1);
+                        }
+                    }
+                    // If the player will draw card, wait for it's operation
+                    if (signal == 0)
+                    {
+                        signal = 10;
+                    }
+                }
+            }
+        }
     ```
